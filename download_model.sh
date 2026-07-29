@@ -1,13 +1,13 @@
 #!/bin/bash
-# download_model.sh — Downloads Qwen2.5-3B-Instruct GGUF model for ADTC 2026
+# download_model.sh — Downloads Qwen2.5-1.5B-Instruct GGUF model for ADTC 2026
 # Idempotent: skips download if file already exists
 
 set -e
 
 MODEL_DIR="model"
-MODEL_FILE="qwen2.5-3b-instruct-q4_k_m.gguf"
+MODEL_FILE="qwen2.5-1.5b-instruct-q4_k_m.gguf"
 MODEL_PATH="${MODEL_DIR}/${MODEL_FILE}"
-MODEL_URL="https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/resolve/main/qwen2.5-3b-instruct-q4_k_m.gguf"
+MODEL_URL="https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf"
 
 echo "=== Otimi Desk — Model Download ==="
 
