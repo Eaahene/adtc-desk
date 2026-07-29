@@ -167,7 +167,7 @@ class Orchestrator:
         
         result = self.llm.generate(
             prompt=prompt,
-            max_tokens=1024,
+            max_tokens=256,
             temperature=0.1,
             stop=["<|user|>", "<|system|>"],
         )
@@ -239,18 +239,23 @@ class Orchestrator:
         
         results = self.execute(plan)
         
-        # Store conversation history (exclude binary embedding data)
-        clean_results = []
-        for r in results:
-            clean_r = {k: v for k, v in r.items() if k != 'embedding'}
-            if 'result' in clean_r and isinstance(clean_r['result'], dict):
-                clean_r['result'] = {k: v for k, v in clean_r['result'].items() if k != 'embedding'}
-            clean_results.append(clean_r)
+        # Store conversation history (exclude all binary/embedding data)
+        def clean_for_json(obj):
+            if isinstance(obj, bytes):
+                return "<binary>"
+            if isinstance(obj, dict):
+                return {k: clean_for_json(v) for k, v in obj.items() if k != 'embedding'}
+            if isinstance(obj, list):
+                return [clean_for_json(item) for item in obj]
+            return obj
+        
+        clean_results = clean_for_json(results)
         
         self.conversation_history.append({"role": "user", "content": user_input})
         self.conversation_history.append({"role": "assistant", "content": json.dumps({"plan": plan, "results": clean_results})})
-        if len(self.conversation_history) > 16:
-            self.conversation_history = self.conversation_history[-16:]
+        # Keep history small for context window (2 turns = 4 messages)
+        if len(self.conversation_history) > 4:
+            self.conversation_history = self.conversation_history[-4:]
         
         return {
             "status": "completed",

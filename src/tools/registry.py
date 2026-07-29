@@ -172,52 +172,34 @@ class Plan(BaseModel):
 
 # --- System Prompt Generator ---
 def build_system_prompt() -> str:
-    """Build a concise system prompt optimized for accuracy."""
-    tool_lines = []
-    for name, info in TOOLS.items():
-        params = info["params"].model_json_schema()
-        props = params.get("properties", {})
-        required = params.get("required", [])
-        param_strs = []
-        for pname, pinfo in props.items():
-            req = "*" if pname in required else ""
-            ptype = pinfo.get("type", "str")
-            if pname == "tags":
-                param_strs.append(f"{pname}{req}:list")
-            elif pname in ("task_id", "event_id", "limit", "exclude_event_id"):
-                param_strs.append(f"{pname}{req}:int")
-            else:
-                param_strs.append(f"{pname}{req}")
-        tool_lines.append(f"- {name}({', '.join(param_strs)}): {info['description']}")
+    """Ultra-compact system prompt for minimum tokens, maximum accuracy."""
+    return """Desk AI. JSON only. Tools:
+-create_task(title*,due_date,tags:list)
+-update_task(task_id*:int,title,due_date,status)
+-search_tasks(query*,limit:int)
+-create_event(title*,start_time*,end_time*,location)
+-update_event(event_id*:int,title,start_time,end_time)
+-check_conflicts(start_time*,end_time*)
+-list_events(start,end,limit:int)
+-create_contact(name*,email,phone,company)
+-search_contacts(query*,limit:int)
+-create_note(content*,tags:list)
+-search_notes(query*,limit:int)
+-draft_email(recipient*,subject*,body*:max100words,tone)
+-summarize_day(date*)
 
-    tools_text = "\n".join(tool_lines)
+Format: {"reasoning":"...","tool_calls":[{"id":"1","name":"tool","arguments":{}}]}
+*required. ISO dates. Tags: ["a","b"].
 
-    return f"""You are Desk, a local AI chief-of-staff for entrepreneurs. Manage tasks, calendar, contacts, notes, and email drafts.
+Examples:
+User: Task call supplier tomorrow
+{"reasoning":"Create task","tool_calls":[{"id":"1","name":"create_task","arguments":{"title":"Call supplier","due_date":"2026-07-30","tags":["supplier"]}}]}
 
-Available Tools:
-{tools_text}
+User: Meeting Tuesday 3pm
+{"reasoning":"Create event","tool_calls":[{"id":"1","name":"create_event","arguments":{"title":"Meeting","start_time":"2026-08-05T15:00:00","end_time":"2026-08-05T16:00:00"}}]}
 
-RESPONSE FORMAT (strict JSON):
-{{"reasoning": "brief explanation", "tool_calls": [{{"id": "1", "name": "tool_name", "arguments": {{"param": "value"}}}}]}}
-
-CRITICAL RULES:
-1. Output ONLY valid JSON - no markdown, no explanation
-2. Each tool_call MUST have: "id" (string "1","2",...), "name", "arguments"
-3. Required params marked with * are MANDATORY
-4. Use ISO format: dates "2026-07-30", times "2026-07-30T09:00:00"
-5. Tags are arrays: ["tag1", "tag2"]
-6. For multiple requests, include ALL tool_calls in one response
-
-EXAMPLES:
-
-User: "Create a task to call supplier tomorrow"
-Response: {{"reasoning": "Create task for supplier call", "tool_calls": [{{"id": "1", "name": "create_task", "arguments": {{"title": "Call supplier", "due_date": "2026-07-30", "tags": ["supplier"]}}}}]}}
-
-User: "Schedule meeting with volunteer coordinator next Tuesday at 3pm"
-Response: {{"reasoning": "Create calendar event for volunteer meeting", "tool_calls": [{{"id": "1", "name": "create_event", "arguments": {{"title": "Meeting with volunteer coordinator", "start_time": "2026-08-05T15:00:00", "end_time": "2026-08-05T16:00:00"}}}}]}}
-
-User: "Search for notes about supplier ABC and draft a follow-up email"
-Response: {{"reasoning": "Search notes then draft email", "tool_calls": [{{"id": "1", "name": "search_notes", "arguments": {{"query": "supplier ABC"}}}}, {{"id": "2", "name": "draft_email", "arguments": {{"recipient": "supplier ABC", "subject": "Follow-up", "body": "Dear Supplier, following up on our previous discussion..."}}}}]}}"""
+User: Notes supplier ABC then email
+{"reasoning":"Search+draft","tool_calls":[{"id":"1","name":"search_notes","arguments":{"query":"supplier ABC"}},{"id":"2","name":"draft_email","arguments":{"recipient":"supplier","subject":"Follow-up","body":"Hi, following up..."}}]}"""
 
 
 # --- Validation ---
@@ -236,10 +218,25 @@ def validate_plan(plan: Dict[str, Any]) -> tuple[bool, Optional[str]]:
     """Validate an entire plan. Returns (valid, error_message)."""
     if "tool_calls" not in plan:
         return False, "Plan missing 'tool_calls' field"
+    
+    # Normalize tool calls: handle "tool" key as alias for "name"
     for tc in plan["tool_calls"]:
-        valid, err = validate_tool_call(tc["name"], tc["arguments"])
-        if not valid:
-            return False, f"Invalid tool call {tc.get('id', '?')}: {err}"
+        if "name" not in tc and "tool" in tc:
+            tc["name"] = tc["tool"]
+    
+    # Filter out invalid tool calls
+    valid_calls = []
+    for tc in plan["tool_calls"]:
+        if "name" not in tc:
+            continue
+        valid, err = validate_tool_call(tc["name"], tc.get("arguments", {}))
+        if valid:
+            valid_calls.append(tc)
+    
+    if not valid_calls:
+        return False, "No valid tool calls in plan"
+    
+    plan["tool_calls"] = valid_calls
     return True, None
 
 
