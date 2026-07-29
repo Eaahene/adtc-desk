@@ -1,0 +1,85 @@
+{
+  "schema_version": "1.1.0",
+  "profiler_version": "adtc-profiler 0.1.0",
+  "submission": {
+    "team_id": "adtc-otimi",
+    "domain": "autonomous_ai_agents",
+    "language_scope": [
+      "en"
+    ],
+    "african_alpha_claim": true,
+    "budget_laptop_claim": true,
+    "submitter": {
+      "name": "Otimi Team",
+      "email": "otimi@adtc2026.dev",
+      "github_handle": "Eaahene"
+    },
+    "cross_disciplinary_pairing": {
+      "discipline": "education",
+      "load_bearing": true,
+      "description": "Desk serves solo entrepreneurs and educators across Ghana and West Africa who manage school registrations, supplier coordination, volunteer scheduling, and community outreach without administrative support. The system handles task management, calendar conflict detection, contact tracking, note-taking with vector search, and email drafting â€” all running locally on affordable laptops without internet dependency, addressing the reality that 80% of African SMEs lack access to cloud-based productivity tools."
+    },
+    "test_prompts": [
+      {
+        "prompt_id": "tp_001",
+        "prompt": "Create a task to follow up with the chalk supplier about the bulk order for the new term, and schedule a meeting with the parent-teacher association coordinator next week to discuss the registration process."
+      },
+      {
+        "prompt_id": "tp_002",
+        "prompt": "Search my notes for any previous communication with Supplier ABC about classroom materials, then draft a professional email to them requesting updated pricing for notebooks and pens."
+      }
+    ],
+    "model": {
+      "name": "Qwen2.5-1.5B-Instruct-Q4_K_M",
+      "runtime": "llama.cpp",
+      "quantization": "GGUF Q4_K_M",
+      "parameters_estimate": "1.5B",
+      "packaging": "binary_bundle"
+    }
+  },
+  "environment": {
+    "measured_on": "participant_laptop",
+    "cpu_model": "AMD64 Family 23 Model 24 Stepping 1, AuthenticAMD",
+    "ram_gb": 13.9,
+    "gpu": "none",
+    "os": "Windows-11-10.0.26200-SP0"
+  },
+  "throughput": {
+    "tokens_per_second_generation": 3.19,
+    "first_token_latency_ms": 58402.91,
+    "prompt_tokens": 512,
+    "generated_tokens": 128
+  },
+  "memory": {
+    "peak_rss_mb": 3317.39,
+    "steady_state_rss_mb": 3164.66,
+    "peak_vms_mb": 1753.48
+  },
+  "accuracy": [
+    {
+      "benchmark": "arc_easy",
+      "dataset_version": "lm-eval-harness",
+      "language": "en",
+      "samples": 50,
+      "score": 0.78,
+      "metric": "acc_norm"
+    }
+  ],
+  "cpu_thermal": {
+    "cpu_percent_p99": 100.0,
+    "core_temp_c_peak": null,
+    "throttled": false
+  },
+  "reproducibility": {
+    "git_commit_sha": "ad80bc3a9adf",
+    "docker_image_digest": "unknown",
+    "random_seed": 42
+  },
+  "model_info": {
+    "params_count": 3397103616,
+    "context_length": 32768,
+    "architecture": "qwen2",
+    "claimed_params_estimate": "3B",
+    "params_match": true
+  }
+}
