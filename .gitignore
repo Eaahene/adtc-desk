@@ -58,3 +58,8 @@ llama-bench/
 BENCHMARKING.md
 DEMO_SCRIPT.md
 LICENSE
+
+# Code directories (local only)
+src/
+eval/
+scripts/
