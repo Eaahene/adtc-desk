@@ -1,9 +1,0 @@
-huggingface-hub[hf_transfer]>=0.23.0
-tqdm>=4.66.0
-fastapi>=0.111.0
-uvicorn>=0.30.0
-pydantic>=2.7.0
-pydantic-settings>=2.3.0
-sqlite-vec>=0.1.6
-sentence-transformers>=3.0.0
-python-dotenv>=1.0.0
