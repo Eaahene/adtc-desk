@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Desk — Local AI Chief of Staff</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0d1117; color: #e6edf3; height: 100vh; display: flex; flex-direction: column; }
+        header { padding: 16px 24px; background: #161b22; border-bottom: 1px solid #30363d; display: flex; align-items: center; gap: 12px; }
+        header h1 { font-size: 1.25rem; font-weight: 600; }
+        .badge { font-size: 0.7rem; background: #238636; color: white; padding: 2px 8px; border-radius: 12px; font-weight: 500; }
+        main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+        .chat-container { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+        .message { max-width: 800px; margin: 0 auto; width: 100%; }
+        .message.user { align-self: flex-end; }
+        .message.assistant { align-self: flex-start; }
+        .message-content { padding: 12px 16px; border-radius: 12px; line-height: 1.6; }
+        .message.user .message-content { background: #1f6feb; color: white; border-bottom-right-radius: 4px; }
+        .message.assistant .message-content { background: #161b22; border: 1px solid #30363d; border-bottom-left-radius: 4px; }
+        .plan-card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin-top: 8px; }
+        .plan-card h4 { color: #8b949e; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+        .tool-call { display: flex; align-items: flex-start; gap: 12px; padding: 10px; background: #0d1117; border-radius: 6px; margin-bottom: 8px; font-family: monospace; font-size: 0.85rem; }
+        .tool-call:last-child { margin-bottom: 0; }
+        .tool-icon { width: 24px; height: 24px; background: #1f6feb; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold; color: white; flex-shrink: 0; }
+        .tool-name { font-weight: 600; color: #58a6ff; }
+        .tool-args { color: #8b949e; font-size: 0.8rem; margin-left: 4px; }
+        .plan-actions { display: flex; gap: 8px; margin-top: 16px; }
+        .btn { padding: 8px 16px; border-radius: 6px; font-weight: 500; font-size: 0.85rem; cursor: pointer; border: none; transition: background 0.15s; }
+        .btn-primary { background: #238636; color: white; }
+        .btn-primary:hover { background: #2ea043; }
+        .btn-secondary { background: #30363d; color: #e6edf3; border: 1px solid #30363d; }
+        .btn-secondary:hover { background: #3d444d; }
+        .btn-danger { background: #da3633; color: white; }
+        .btn-danger:hover { background: #f85149; }
+        .result-card { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 12px; margin-top: 8px; font-family: monospace; font-size: 0.8rem; color: #8b949e; max-height: 200px; overflow-y: auto; }
+        .result-card.success { border-color: #238636; }
+        .result-card.error { border-color: #da3633; }
+        .input-area { padding: 16px 24px; background: #161b22; border-top: 1px solid #30363d; }
+        .input-wrapper { max-width: 800px; margin: 0 auto; display: flex; gap: 8px; }
+        .input-wrapper textarea { flex: 1; background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 12px 16px; color: #e6edf3; font-family: inherit; font-size: 0.95rem; resize: none; min-height: 48px; max-height: 160px; line-height: 1.5; }
+        .input-wrapper textarea:focus { outline: none; border-color: #1f6feb; }
+        .input-wrapper button { align-self: flex-end; padding: 12px 20px; border-radius: 8px; background: #1f6feb; color: white; font-weight: 500; border: none; cursor: pointer; transition: background 0.15s; }
+        .input-wrapper button:hover { background: #388bfd; }
+        .input-wrapper button:disabled { background: #30363d; color: #8b949e; cursor: not-allowed; }
+        .hint { font-size: 0.75rem; color: #8b949e; text-align: center; margin-top: 8px; }
+        .loading { display: inline-block; width: 16px; height: 16px; border: 2px solid #30363d; border-top-color: #1f6feb; border-radius: 50%; animation: spin 0.8s linear infinite; margin-right: 8px; vertical-align: middle; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .streaming { border-left: 3px solid #1f6feb; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Desk</h1>
+        <span class="badge">Local • Offline</span>
+    </header>
+    <main>
+        <div class="chat-container" id="chat"></div>
+        <div class="input-area">
+            <div class="input-wrapper">
+                <textarea id="input" placeholder="Type your request… (e.g., 'Follow up with 3 suppliers, block Thursday 9-11am')"></textarea>
+                <button id="send" onclick="sendMessage()">Send</button>
+            </div>
+            <p class="hint">Press Enter to send, Shift+Enter for new line. All processing happens locally on your device.</p>
+        </div>
+    </main>
+    <script>
+        const chat = document.getElementById('chat');
+        const input = document.getElementById('input');
+        const sendBtn = document.getElementById('send');
+        let pendingPlan = null;
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+
+        async function sendMessage() {
+            const message = input.value.trim();
+            if (!message) return;
+            message) return;
+            
+            input.value = '';
+            sendBtn.disabled = true;
+            sendBtn.innerHTML = '<span class="loading"></span>Sending...';
+
+            addMessage(message, 'user');
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message, auto_confirm: false })
+                });
+                const data = await response.json();
+                handleResponse(data);
+            } catch (err) {
+                addMessage('Error: ' + err.message, 'assistant', true);
+            } finally {
+                sendBtn.disabled = false;
+                sendBtn.textContent = 'Send';
+            }
+        }
+
+        function handleResponse(data) {
+            if (data.status === 'awaiting_confirmation') {
+                pendingPlan = data.plan;
+                renderPlanCard(data.plan);
+            } else if (data.status === 'completed') {
+                renderResults(data.results);
+            } else if (data.status === 'error') {
+                addMessage('Error: ' + data.message, 'assistant', true);
+            }
+        }
+
+        function addMessage(text, role, isError = false) {
+            const div = document.createElement('div');
+            div.className = 'message ' + role;
+            div.innerHTML = '<div class="message-content' + (isError ? ' error' : '') + '">' + escapeHtml(text) + '</div>';
+            chat.appendChild(div);
+            scrollToBottom();
+        }
+
+        function renderPlanCard(plan) {
+            const div = document.createElement('div');
+            div.className = 'message assistant';
+            div.id = 'plan-card';
+            
+            let toolCallsHtml = '';
+            plan.tool_calls.forEach((tc, i) => {
+                const args = JSON.stringify(tc.arguments, null, 2);
+                toolCallsHtml += '<div class="tool-call">' +
+                    '<span class="tool-icon">' + (i + 1) + '</span>' +
+                    '<div><span class="tool-name">' + escapeHtml(tc.name) + '</span>' +
+                    '<span class="tool-args">' + escapeHtml(args) + '</span></div>' +
+                    '</div>';
+            });
+
+            div.innerHTML = '<div class="message-content">' +
+                '<div class="plan-card">' +
+                '<h4>Plan: ' + escapeHtml(plan.reasoning) + '</h4>' +
+                '<div class="tool-calls">' + toolCallsHtml + '</div>' +
+                '<div class="plan-actions">' +
+                '<button class="btn btn-primary" onclick="confirmPlan()">Execute Plan</button>' +
+                '<button class="btn btn-secondary" onclick="rejectPlan()">Cancel</button>' +
+                '<button class="btn btn-danger" onclick="editPlan()">Edit</button>' +
+                '</div>' +
+                '</div>' +
+                '</div>';
+            chat.appendChild(div);
+            scrollToBottom();
+        }
+
+        function renderResults(results) {
+            const planCard = document.getElementById('plan-card');
+            if (planCard) planCard.remove();
+
+            const div = document.createElement('div');
+            div.className = 'message assistant';
+            
+            let resultsHtml = '<div class="message-content">';
+            results.forEach(r => {
+                const isError = r.error;
+                resultsHtml += '<div class="result-card ' + (isError ? 'error' : 'success') + '">' +
+                    '<strong>' + escapeHtml(r.name) + '</strong> ' + (isError ? '✗ ' + escapeHtml(r.error) : '✓') +
+                    '<pre>' + escapeHtml(JSON.stringify(r.result || {}, null, 2)) + '</pre>' +
+                    '</div>';
+            });
+            resultsHtml += '</div>';
+            div.innerHTML = resultsHtml;
+            chat.appendChild(div);
+            scrollToBottom();
+        }
+
+        async function confirmPlan() {
+            if (!pendingPlan) return;
+            
+            const planCard = document.getElementById('plan-card');
+            if (planCard) planCard.querySelector('.plan-actions').innerHTML = '<span class="loading"></span>Executing...';
+
+            try {
+                const response = await fetch('/api/confirm', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ plan: pendingPlan })
+                });
+                const data = await response.json();
+                handleResponse(data);
+                pendingPlan = null;
+            } catch (err) {
+                addMessage('Error: ' + err.message, 'assistant', true);
+            }
+        }
+
+        function rejectPlan() {
+            const planCard = document.getElementById('plan-card');
+            if (planCard) planCard.remove();
+            pendingPlan = null;
+        }
+
+        function editPlan() {
+            alert('Plan editing coming soon. For now, cancel and rephrase your request.');
+        }
+
+        function scrollToBottom() {
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

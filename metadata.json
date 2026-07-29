@@ -1,0 +1,37 @@
+{
+  "team_id": "adtc-otimi",
+  "domain": "autonomous_ai_agents",
+  "language_scope": ["en"],
+  "african_alpha_claim": true,
+  "budget_laptop_claim": true,
+  "submitter": {
+    "name": "Otimi Team",
+    "email": "otimi@adtc2026.dev",
+    "github_handle": "otimi-team"
+  },
+  "cross_disciplinary_pairing": {
+    "discipline": "education",
+    "load_bearing": true,
+    "description": "Desk serves solo entrepreneurs and educators in Ghana who need an AI assistant for task management, scheduling, and note-taking — without cloud dependencies or subscription fees."
+  },
+  "test_prompts": [
+    {
+      "prompt_id": "tp_001",
+      "prompt": "Create a task to follow up with the supplier about the bulk chalk order by Friday, and schedule a meeting with the volunteer coordinator next week to discuss training session logistics."
+    },
+    {
+      "prompt_id": "tp_002",
+      "prompt": "Search my notes for any previous communication with Supplier ABC, then draft a professional email to them requesting updated pricing for classroom materials."
+    }
+  ],
+  "model": {
+    "name": "Qwen2.5-3B-Instruct-Q4_K_M",
+    "runtime": "llama.cpp",
+    "quantization": "GGUF Q4_K_M",
+    "parameters_estimate": "3B",
+    "packaging": "binary_bundle"
+  },
+  "_runtime": {
+    "model_path": "model/qwen2.5-3b-instruct-q4_k_m.gguf"
+  }
+}
