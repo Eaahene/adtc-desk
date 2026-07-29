@@ -7,21 +7,21 @@
   "submitter": {
     "name": "Otimi Team",
     "email": "otimi@adtc2026.dev",
-    "github_handle": "otimi-team"
+    "github_handle": "Eaahene"
   },
   "cross_disciplinary_pairing": {
     "discipline": "education",
     "load_bearing": true,
-    "description": "Desk serves solo entrepreneurs and educators in Ghana who need an AI assistant for task management, scheduling, and note-taking — without cloud dependencies or subscription fees."
+    "description": "Desk serves solo entrepreneurs and educators across Ghana and West Africa who manage school registrations, supplier coordination, volunteer scheduling, and community outreach without administrative support. The system handles task management, calendar conflict detection, contact tracking, note-taking with vector search, and email drafting — all running locally on affordable laptops without internet dependency, addressing the reality that 80% of African SMEs lack access to cloud-based productivity tools."
   },
   "test_prompts": [
     {
       "prompt_id": "tp_001",
-      "prompt": "Create a task to follow up with the supplier about the bulk chalk order by Friday, and schedule a meeting with the volunteer coordinator next week to discuss training session logistics."
+      "prompt": "Create a task to follow up with the chalk supplier about the bulk order for the new term, and schedule a meeting with the parent-teacher association coordinator next week to discuss the registration process."
     },
     {
       "prompt_id": "tp_002",
-      "prompt": "Search my notes for any previous communication with Supplier ABC, then draft a professional email to them requesting updated pricing for classroom materials."
+      "prompt": "Search my notes for any previous communication with Supplier ABC about classroom materials, then draft a professional email to them requesting updated pricing for notebooks and pens."
     }
   ],
   "model": {

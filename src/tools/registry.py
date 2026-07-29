@@ -172,7 +172,7 @@ class Plan(BaseModel):
 
 # --- System Prompt Generator ---
 def build_system_prompt() -> str:
-    """Build a concise system prompt for fast generation."""
+    """Build a concise system prompt optimized for accuracy."""
     tool_lines = []
     for name, info in TOOLS.items():
         params = info["params"].model_json_schema()
@@ -192,21 +192,32 @@ def build_system_prompt() -> str:
 
     tools_text = "\n".join(tool_lines)
 
-    return f"""You are a local AI chief-of-staff. Manage tasks, calendar, contacts, notes, and email drafts.
+    return f"""You are Desk, a local AI chief-of-staff for entrepreneurs. Manage tasks, calendar, contacts, notes, and email drafts.
 
-Tools:
+Available Tools:
 {tools_text}
 
-Rules:
-- Output JSON: {{"reasoning": "...", "tool_calls": [{{"id": "1", "name": "tool", "arguments": {{}}}}]}}
-- Each tool_call needs "id", "name", "arguments" (required params marked * above)
-- Batch: if user asks multiple things, do all in one plan
-- * = required param
-- Use ISO datetime for dates (2026-07-30T09:00:00)
-- Tags are lists: ["tag1", "tag2"]
+RESPONSE FORMAT (strict JSON):
+{{"reasoning": "brief explanation", "tool_calls": [{{"id": "1", "name": "tool_name", "arguments": {{"param": "value"}}}}]}}
 
-Example:
-{{"reasoning": "Search supplier tasks and create follow-up", "tool_calls": [{{"id": "1", "name": "search_tasks", "arguments": {{"query": "supplier"}}}}, {{"id": "2", "name": "create_event", "arguments": {{"title": "NPF Call", "start_time": "2026-07-30T09:00:00", "end_time": "2026-07-30T11:00:00"}}}}]}}"""
+CRITICAL RULES:
+1. Output ONLY valid JSON - no markdown, no explanation
+2. Each tool_call MUST have: "id" (string "1","2",...), "name", "arguments"
+3. Required params marked with * are MANDATORY
+4. Use ISO format: dates "2026-07-30", times "2026-07-30T09:00:00"
+5. Tags are arrays: ["tag1", "tag2"]
+6. For multiple requests, include ALL tool_calls in one response
+
+EXAMPLES:
+
+User: "Create a task to call supplier tomorrow"
+Response: {{"reasoning": "Create task for supplier call", "tool_calls": [{{"id": "1", "name": "create_task", "arguments": {{"title": "Call supplier", "due_date": "2026-07-30", "tags": ["supplier"]}}}}]}}
+
+User: "Schedule meeting with volunteer coordinator next Tuesday at 3pm"
+Response: {{"reasoning": "Create calendar event for volunteer meeting", "tool_calls": [{{"id": "1", "name": "create_event", "arguments": {{"title": "Meeting with volunteer coordinator", "start_time": "2026-08-05T15:00:00", "end_time": "2026-08-05T16:00:00"}}}}]}}
+
+User: "Search for notes about supplier ABC and draft a follow-up email"
+Response: {{"reasoning": "Search notes then draft email", "tool_calls": [{{"id": "1", "name": "search_notes", "arguments": {{"query": "supplier ABC"}}}}, {{"id": "2", "name": "draft_email", "arguments": {{"recipient": "supplier ABC", "subject": "Follow-up", "body": "Dear Supplier, following up on our previous discussion..."}}}}]}}"""
 
 
 # --- Validation ---
