@@ -41,3 +41,15 @@ build/
 
 # Embedded repos
 llama.cpp/
+
+# Profiler output
+submission.json
+
+# Test scripts (not needed for submission)
+eval/compare_models.py
+eval/test_accuracy_comparison.py
+eval/test_tps.py
+eval/arc_easy_sample.json
+test_accuracy.py
+test_models.py
+llama-bench/
