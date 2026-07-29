@@ -53,3 +53,8 @@ eval/arc_easy_sample.json
 test_accuracy.py
 test_models.py
 llama-bench/
+
+# Local docs (not for repo)
+BENCHMARKING.md
+DEMO_SCRIPT.md
+LICENSE
